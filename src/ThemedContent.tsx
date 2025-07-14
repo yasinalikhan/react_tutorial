@@ -1,5 +1,4 @@
 // src/ThemedContent.tsx
-import React from "react";
 import { useTheme } from "./ThemeContext"; // Import our custom useTheme hook
 
 function ThemedContent() {

@@ -1,9 +1,10 @@
 // src/PhotoGallery.tsx
-import { useEffect, useState } from "react";
+// Removed useState and useEffect imports as they are now encapsulated in useFetch
+import useFetch from "./useFetch"; // Import our new custom hook
 
-// Define an interface for a Photo object for TypeScript
+// Define an interface for a Photo object
 interface Photo {
-  albumId: number; // Keep all properties from the API for type safety, even if not directly used
+  albumId: number;
   id: number;
   title: string;
   url: string;
@@ -11,54 +12,18 @@ interface Photo {
 }
 
 function PhotoGallery() {
-  // State variables for data, loading status, and error messages
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use the custom useFetch hook to get data, loading, and error states.
+  // We specify Photo[] as the generic type for the data we expect.
+  // We also use destructuring with an alias: 'data' from the hook is renamed to 'photos' locally.
+  const {
+    data: photos,
+    loading,
+    error,
+  } = useFetch<Photo[]>(
+    "https://jsonplaceholder.typicode.com/photos?_limit=10"
+  );
 
-  // Async function to fetch data from the API
-  const fetchPhotos = async () => {
-    try {
-      setLoading(true); // Set loading to true when starting the fetch
-      setError(null); // Clear any previous errors
-
-      // Fetch data from JSONPlaceholder with a limit of 10 photos
-      const response = await fetch(
-        "https://jsonplaceholder.typicode.com/photos?_limit=10"
-      );
-
-      // Check if the network request was successful (status 200-299)
-      if (!response.ok) {
-        // If not successful, throw an error
-        throw new Error(
-          `HTTP error! status: ${response.status} - ${response.statusText}`
-        );
-      }
-
-      // Parse the JSON response
-      const data: Photo[] = await response.json(); // Explicitly type data as Photo[]
-
-      // Update the 'photos' state with the fetched data
-      setPhotos(data);
-    } catch (err: any) {
-      // Catch any errors during the fetch or JSON parsing
-      console.error("Error fetching photos:", err);
-      // Update the 'error' state with the error message
-      setError(
-        err.message || "An unknown error occurred while fetching photos."
-      );
-    } finally {
-      // This block runs after try or catch, ensuring loading is set to false
-      setLoading(false);
-    }
-  };
-
-  // useEffect hook to call fetchPhotos when the component mounts
-  useEffect(() => {
-    fetchPhotos(); // Execute the data fetching function
-  }, []); // Empty dependency array means this effect runs ONLY ONCE after the initial render
-
-  // Conditional Rendering based on state
+  // Conditional Rendering based on the states returned by useFetch
   return (
     <div
       className="photo-gallery"
@@ -71,7 +36,7 @@ function PhotoGallery() {
         textAlign: "center",
       }}
     >
-      <h2>Photo Gallery</h2>
+      <h2>Photo Gallery (Powered by useFetch Hook)</h2>
 
       {loading && (
         <p style={{ fontSize: "1.2em", color: "#555" }}>Loading photos...</p>
@@ -91,8 +56,10 @@ function PhotoGallery() {
         </p>
       )}
 
+      {/* Only render photos if not loading, no error, and photos data exists */}
       {!loading &&
-        !error && // Only render photos if not loading and no error
+        !error &&
+        photos &&
         (photos.length > 0 ? (
           <div
             style={{
@@ -111,7 +78,7 @@ function PhotoGallery() {
                 }}
               >
                 <img
-                  src={photo.thumbnailUrl} // Use thumbnailUrl for smaller images
+                  src={photo.thumbnailUrl}
                   alt={photo.title}
                   style={{
                     maxWidth: "100%",
@@ -126,7 +93,7 @@ function PhotoGallery() {
             ))}
           </div>
         ) : (
-          <p>No photos found.</p> // Message if no photos are returned
+          <p>No photos found.</p> // Message if fetch successful but no photos
         ))}
     </div>
   );
